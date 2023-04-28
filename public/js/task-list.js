@@ -222,6 +222,14 @@ async function createTask(event) {
     const titleInput = document.getElementById('title');
     const dueDateInput = document.getElementById('due_date');
     const descriptionInput = document.getElementById('description');
+    const messages = document.getElementById('messages');
+
+    let title = titleInput.value.trim();
+
+    if (title.length < 15) {
+        messages.innerHTML = 'Title must be at least 15 characters long.';
+        return;
+    }
 
     const response = await fetch('/create', {
         method: 'POST',
@@ -230,7 +238,7 @@ async function createTask(event) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({
-            title: titleInput.value,
+            title: title,
             due_date: dueDateInput.value,
             description: descriptionInput.value
         })
@@ -243,7 +251,8 @@ async function createTask(event) {
         showAlert('The task was successfully created', 'success');
         location.reload();
     } else {
-        showAlert('There was an error creating the task', 'error');
+        const data = await response.json();
+        messages.innerHTML = data.message;
     }
 }
 
@@ -277,6 +286,49 @@ function toggleAddTaskForm() {
         addTaskFormContainer.classList.toggle('hidden');
     });
 }
+
+function moveOutdatedTasks() {
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Set the time to 00:00:00 for accurate comparison
+
+    const todoTable = document.getElementById('todoTable');
+    const outdatedTable = document.getElementById('outdatedTable');
+
+    const tasks = Array.from(todoTable.querySelectorAll('li'));
+    tasks.forEach(task => {
+        const taskDueDate = new Date(task.getAttribute('data-due-date'));
+
+        if (taskDueDate < currentDate) {
+            const taskId = task.getAttribute('data-id');
+            const existingTask = outdatedTable.querySelector(`[data-id="${taskId}"]`);
+
+            if (existingTask) {
+                existingTask.remove();
+            }
+
+            outdatedTable.appendChild(task);
+        }
+    });
+}
+
+function toggleOutdatedTasksTable() {
+    const outdatedTasksContainer = document.getElementById('outdatedTasksContainer');
+    const showOutdatedTasksButton = document.getElementById('showOutdatedTasksButton');
+
+    if (outdatedTasksContainer.style.display === 'none') {
+        outdatedTasksContainer.style.display = 'block';
+        showOutdatedTasksButton.textContent = 'Hide Outdated Tasks';
+    } else {
+        outdatedTasksContainer.style.display = 'none';
+        showOutdatedTasksButton.textContent = 'Show Outdated Tasks';
+    }
+}
+
+
+document.getElementById('showOutdatedTasksButton').addEventListener('click', (event) => {
+    event.preventDefault();
+    toggleOutdatedTasksTable();
+});
 
 document.querySelectorAll('.edit-task').forEach((element) => {
     element.addEventListener('click', (event) => {
@@ -316,3 +368,4 @@ document.addEventListener('submit', (event) => {
 });
 
 toggleAddTaskForm();
+moveOutdatedTasks();

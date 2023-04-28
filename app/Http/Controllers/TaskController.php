@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
@@ -17,10 +18,12 @@ class TaskController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        return view('tasks.index', compact('todoTasks', 'doneTasks'));
+        $outdatedTasks = Task::where('due_date', '<', Carbon::now())
+            ->orderBy('due_date', 'asc')
+            ->get();
+
+        return view('tasks.index', compact('todoTasks', 'doneTasks', 'outdatedTasks'));
     }
-
-
 
     public function create()
     {
